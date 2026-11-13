@@ -8,6 +8,7 @@ import faiss
 import numpy as np
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+import os
 
 from .config import Config
 
@@ -40,13 +41,19 @@ class ChatReply:
 
 def load_documents(directory: str | Path) -> list[Document]:
     """Load nonempty top-level .txt files with source metadata."""
-    raise NotImplementedError
+    documents = []
+    with open("ml_notes.txt") as f:
+        raw_text = f.read()
+        doc = Document(page_content=raw_text, metadata={"source": "ml_notes.txt"})
+        documents.append(doc)
 
 
 def split_documents(documents: list[Document], chunk_size: int,
                     chunk_overlap: int) -> list[Document]:
     """Split documents, preserving metadata and assigning chunk IDs."""
-    raise NotImplementedError
+    for doc in documents:
+        chunks = RecursiveCharacterTextSplitter( chunk_size=512, chunk_overlap=64).split_documents([doc])
+        texts = [chunk.page_content for chunk in chunks]
 
 
 class RAGPipeline:
