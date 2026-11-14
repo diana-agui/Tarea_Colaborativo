@@ -41,19 +41,35 @@ class ChatReply:
 
 def load_documents(directory: str | Path) -> list[Document]:
     """Load nonempty top-level .txt files with source metadata."""
-    documents = []
-    with open("ml_notes.txt") as f:
-        raw_text = f.read()
-        doc = Document(page_content=raw_text, metadata={"source": "ml_notes.txt"})
-        documents.append(doc)
+    directory = Path(directory)
+    if not directory.exists(): raise FileNotFoundError(f"directory not found error")
+    if not directory.is_dir(): raise NotADirectoryError(f"this is NOT a directory")
+
+    paths = []
+    for item in directory.iterdir(): #iterating through files inside dir
+        if item.name.endswith(".txt"): paths.append(item) #if its a txt
+    paths.sort() #sort as the assignment requires
+    documents = []#where LangChain Document objects whose metadata['source'] is the filename
+
+    for p in paths:
+        with open(p, encoding="utf-8") as f:
+            raw_text = f.read()
+            doc = Document(page_content=raw_text, metadata={"source": p.name})
+            documents.append(doc)
+    return documents
 
 
 def split_documents(documents: list[Document], chunk_size: int,
                     chunk_overlap: int) -> list[Document]:
     """Split documents, preserving metadata and assigning chunk IDs."""
+
+    chunks_big = []
     for doc in documents:
-        chunks = RecursiveCharacterTextSplitter( chunk_size=512, chunk_overlap=64).split_documents([doc])
-        texts = [chunk.page_content for chunk in chunks]
+        chunks = RecursiveCharacterTextSplitter( chunk_size, chunk_overlap).split_documents([doc])
+        for index, chunk in enumerate(chunks):
+            chunk.metadata["chunk_id"] = f"{doc.metadata['source']}:{index}" # metadata['chunk_id'] to <source>:<position>
+            chunks_big.append(chunk)
+    return chunks_big #missing data handled as where there is nothing for the for loop, [] is still returend
 
 
 class RAGPipeline:
