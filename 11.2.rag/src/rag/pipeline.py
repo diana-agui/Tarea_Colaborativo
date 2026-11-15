@@ -134,6 +134,7 @@ class RAGPipeline:
     def build_messages(self, question: str,
                        results: list[SearchResult]) -> list[dict[str, str]]:
         """Combine grounding instructions, full history, and current evidence."""
+        # Made with help of AI (ironic)
         system_prompt = (
             "Answer using ONLY the current passages in the last user message and cite their [chunk_id]. "
             f"If they don't contain the answer, say: {ABSTENTION} "
