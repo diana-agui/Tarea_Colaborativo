@@ -159,11 +159,26 @@ class RAGPipeline:
 
     def ask(self, question: str) -> ChatReply:
         """Answer using retrieved evidence and record the completed turn."""
-        raise NotImplementedError
+        evidence = self.retrieve(question)
+
+        if evidence:
+            messages = self.build_messages(question,evidence)
+            reply = self.client.chat.completions.create(model=self.config.model, messages=messages)
+            solution = reply.choices[0].message.content
+            if not solution or not solution.strip(): raise ValueError("errrr errorrrr") #ai assisted, tried using is None or solution = "", failed
+            
+        else:
+            solution = ABSTENTION
+            evidence = [] #generated error for :test_abstention_records_a_turn_without_generation, when i returned ChatReply with abstention and []
+        
+        self.history.append({"role": "user", "content": question})
+        self.history.append({"role": "assistant", "content": solution})
+        return ChatReply(answer=solution, sources=evidence)# to combat my previous error, requirement return ChatReply(ABSTENTION, []) is still complete , only it does it at end
+
 
     def clear(self) -> None:
         """Clear conversation history while retaining the index."""
-        raise NotImplementedError
+        self.history.clear()
 
     def rerank(self, question: str, results: list[SearchResult],
                top_n: int) -> list[SearchResult]:
